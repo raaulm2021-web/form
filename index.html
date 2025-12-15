@@ -1,0 +1,977 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Formulário de Crédito - Coraliados</title>
+
+<style>
+:root{
+  --bg:#fff;
+  --card:#fff;
+  --muted:#6b6b6b;
+  --text:#1a1a1a;
+  --accent:#E84873;
+  --accent-2:#ff6f91;
+  --danger:#ef4444;
+  --success:#22c55e;
+}
+
+*{box-sizing:border-box}
+
+body{
+  margin:0;
+  font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Arial,sans-serif;
+  background:linear-gradient(180deg, #fff 0%, #ffe4ec 100%);
+  color:var(--text);
+}
+
+.container{
+  max-width:980px;
+  margin:48px auto;
+  padding:24px;
+}
+
+.card{
+  background:var(--card);
+  border:1px solid rgba(232,72,115,.2);
+  border-radius:24px;
+  padding:28px;
+  box-shadow:0 8px 30px rgba(232,72,115,.15);
+}
+
+h1{
+  margin:0 0 8px;
+  font-size:28px;
+  color:var(--accent);
+  letter-spacing:.3px;
+}
+
+p.lead{
+  margin:0 0 24px;
+  color:var(--muted);
+}
+
+/* Progress */
+.progress-wrap{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  margin:12px 0 28px;
+}
+.progress{
+  position:relative;
+  flex:1;
+  height:10px;
+  background:#f5f5f5;
+  border-radius:999px;
+  overflow:hidden;
+  border:1px solid rgba(232,72,115,.3);
+}
+.bar{
+  position:absolute;
+  inset:0 100% 0 0;
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  transition:inset .35s ease;
+}
+.step-indicator{
+  font-size:12px;
+  color:var(--muted);
+}
+
+/* Steps */
+.step{display:none;animation:fade .25s ease}
+.step.active{display:block}
+@keyframes fade{
+  from{opacity:.5;transform:translateY(4px)}
+  to{opacity:1;transform:none}
+}
+
+/* Inputs */
+label{
+  display:block;
+  margin:0 0 10px;
+  font-weight:600;
+  color:var(--accent);
+}
+
+input[type="text"],
+input[type="number"],
+input[type="date"],
+input[type="tel"],
+select{
+  width:100%;
+  padding:14px 16px;
+  border-radius:14px;
+  border:1px solid rgba(232,72,115,.3);
+  background:#fff;
+  color:var(--text);
+  outline:none;
+  transition:border .2s;
+}
+
+input:focus,
+select:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 2px rgba(232,72,115,.15);
+}
+
+/* Botões */
+.btns{display:flex;flex-wrap:wrap;gap:12px}
+.btn{
+  border:1px solid rgba(232,72,115,.3);
+  background:#fff;
+  color:var(--accent);
+  padding:12px 16px;
+  border-radius:14px;
+  cursor:pointer;
+  transition:all .2s;
+  font-weight:600;
+}
+.btn:hover{
+  background:var(--accent);
+  color:#fff;
+}
+.btn.selected{
+  background:var(--accent);
+  color:#fff;
+  box-shadow:0 0 0 3px rgba(232,72,115,.25);
+}
+
+/* Navegação */
+.nav{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  margin-top:24px;
+}
+.nav .prev,
+.nav .next,
+.submit{
+  flex:1;
+  padding:14px 18px;
+  border-radius:14px;
+  border:none;
+  font-weight:700;
+  cursor:pointer;
+}
+.nav .prev{
+  background:#fff;
+  border:1px solid rgba(232,72,115,.3);
+  color:var(--accent);
+}
+.nav .next{
+  background:linear-gradient(90deg,var(--accent),var(--accent-2));
+  color:#fff;
+}
+.submit{
+  background:linear-gradient(90deg,#34d399,#10b981);
+  color:#fff;
+}
+
+.hint{font-size:12px;color:var(--muted);margin-top:8px}
+.error{color:var(--danger);font-size:13px;margin-top:8px;display:none}
+
+.grid{display:grid;gap:14px}
+@media(min-width:720px){
+  .grid.cols-2{grid-template-columns:1fr 1fr}
+}
+
+.toast{
+  position:fixed;
+  right:18px;
+  bottom:18px;
+  background:#fff;
+  border:1px solid rgba(232,72,115,.3);
+  color:var(--text);
+  padding:14px 16px;
+  border-radius:14px;
+  box-shadow:0 10px 30px rgba(232,72,115,.15);
+  display:none;
+}
+
+.success{color:var(--success)}
+</style>
+
+<!-- Firebase SDKs (CARREGADOS APENAS UMA VEZ) -->
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+
+<script>
+/* ========= FIREBASE INIT (PROTEGIDO) ========= */
+window.firebaseConfig = window.firebaseConfig || {
+  apiKey: "AIzaSyC3Iz0VoHW5VwHuqgyNCsCB2dwetQRP_uM",
+  authDomain: "credito-formulario.firebaseapp.com",
+  projectId: "credito-formulario",
+  storageBucket: "credito-formulario.appspot.com",
+  messagingSenderId: "615719081823",
+  appId: "1:615719081823:web:f1f2cd52dd3a890d6348ea",
+  measurementId: "G-EK7NPK9T45"
+};
+
+if (!firebase.apps.length) {
+  firebase.initializeApp(firebaseConfig);
+}
+
+console.log("✅ Firebase inicializado:", firebase.app().options.storageBucket);
+</script>
+
+<!-- Função de resize de imagem (mantida) -->
+<script>
+function resizeImage(file, maxWidth=1024, maxHeight=1024){
+  return new Promise((resolve, reject)=>{
+    const img = new Image();
+    const reader = new FileReader();
+
+    reader.onload = e => img.src = e.target.result;
+    reader.onerror = reject;
+
+    img.onload = ()=>{
+      let w = img.width;
+      let h = img.height;
+
+      if(w > h && w > maxWidth){
+        h = Math.round(h * (maxWidth / w));
+        w = maxWidth;
+      }else if(h > maxHeight){
+        w = Math.round(w * (maxHeight / h));
+        h = maxHeight;
+      }
+
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      canvas.getContext("2d").drawImage(img,0,0,w,h);
+      canvas.toBlob(b=>resolve(b),"image/jpeg",0.8);
+    };
+
+    reader.readAsDataURL(file);
+  });
+}
+</script>
+
+</head>
+<body>
+
+<div class="container">
+  <div class="card">
+
+    <h1>Solicitação de Crédito</h1>
+    <p class="lead">Preencha as etapas para enviar seus dados com segurança.</p>
+
+    <div class="progress-wrap">
+      <div class="progress">
+        <div class="bar" id="bar"></div>
+      </div>
+      <div class="step-indicator">
+        <span id="stepNow">1</span>/<span id="stepTotal">12</span>
+      </div>
+    </div>
+
+    <form id="formCredito" novalidate>
+
+      <!-- 0. Nome completo -->
+      <div class="step active" data-step="1">
+        <label for="nomeCompleto_s1">Informe seu nome completo</label>
+        <input
+          id="nomeCompleto_s1"
+          name="nomeCompleto"
+          placeholder="Seu nome completo"
+          required
+          type="text"
+        />
+        <div class="error" data-error="nomeCompleto">
+          Por favor, informe seu nome completo.
+        </div>
+        <div class="nav">
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- 1. CNPJ -->
+      <div class="step" data-step="2">
+        <label for="cnpj">1ª Preencha seu CNPJ</label>
+        <input
+          id="cnpj"
+          name="cnpj"
+          inputmode="numeric"
+          placeholder="00.000.000/0000-00"
+          type="text"
+        />
+        <div class="hint">
+          Preencher apenas números sem pontos ou espaços.
+        </div>
+        <div class="nav">
+          <button class="prev" type="button">Voltar</button>
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- 2. CPF -->
+      <div class="step" data-step="3">
+        <label for="cpf">2ª Preencha seu CPF</label>
+        <input
+          id="cpf"
+          name="cpf"
+          inputmode="numeric"
+          placeholder="000.000.000-00"
+          required
+          type="text"
+        />
+        <div class="hint">
+          Preencher apenas números sem pontos ou espaços.
+        </div>
+        <div class="error" data-error="cpf">Informe um CPF.</div>
+        <div class="nav">
+          <button class="prev" type="button">Voltar</button>
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- 3. Valor desejado -->
+      <div class="step" data-step="4">
+        <label>3ª Selecione o valor desejado</label>
+        <div class="btns" data-group="valorDesejado">
+          <button class="btn" data-value="15000" type="button">
+            R$ 15.000,00
+          </button>
+          <button class="btn" data-value="30000" type="button">
+            R$ 30.000,00
+          </button>
+          <button class="btn" data-value="50000" type="button">
+            R$ 50.000,00
+          </button>
+          <button class="btn" data-value="100000" type="button">
+            R$ 100.000,00
+          </button>
+        </div>
+        <input id="valorDesejado" name="valorDesejado" required type="hidden" />
+        <div class="error" data-error="valorDesejado">
+          Selecione um valor.
+        </div>
+        <div class="nav">
+          <button class="prev" type="button">Voltar</button>
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- 4. Parcelas -->
+      <div class="step" data-step="5">
+        <label>4ª Selecione o número de parcelas</label>
+        <div class="btns" data-group="parcelas">
+          <button class="btn" data-value="12" type="button">12x</button>
+          <button class="btn" data-value="24" type="button">24x</button>
+          <button class="btn" data-value="36" type="button">36x</button>
+          <button class="btn" data-value="48" type="button">48x</button>
+        </div>
+        <input id="parcelas" name="parcelas" required type="hidden" />
+        <div class="error" data-error="parcelas">
+          Selecione o número de parcelas.
+        </div>
+        <div class="nav">
+          <button class="prev" type="button">Voltar</button>
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- 5. Carência -->
+      <div class="step" data-step="6">
+        <label>
+          5ª Você aceita carência de 3 meses para pagar a primeira parcela?
+        </label>
+        <div class="btns" data-group="carencia">
+          <button class="btn" data-value="Sim" type="button">Sim</button>
+          <button class="btn" data-value="Não" type="button">Não</button>
+        </div>
+        <input id="carencia" name="carencia" required type="hidden" />
+        <div class="error" data-error="carencia">
+          Selecione uma opção.
+        </div>
+        <div class="nav">
+          <button class="prev" type="button">Voltar</button>
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- 6. Motivo -->
+      <div class="step" data-step="7">
+        <label>6ª Qual motivo do crédito?</label>
+        <div class="btns" data-group="motivo">
+          <button class="btn" data-value="Investir na minha empresa" type="button">
+            Investir na minha empresa
+          </button>
+          <button class="btn" data-value="Reformar meu negócio" type="button">
+            Reformar meu negócio
+          </button>
+          <button class="btn" data-value="Comprar um veículo para empresa" type="button">
+            Comprar um veículo para empresa
+          </button>
+          <button class="btn" data-value="Compra de equipamento" type="button">
+            Compra de equipamento
+          </button>
+          <button class="btn" data-value="Outros" type="button">Outros</button>
+        </div>
+        <input id="motivo" name="motivo" required type="hidden" />
+        <div class="error" data-error="motivo">Selecione um motivo.</div>
+        <div class="nav">
+          <button class="prev" type="button">Voltar</button>
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+      <!-- 7. Imóvel -->
+      <div class="step" data-step="8">
+        <label>7ª Você possuí imóvel?</label>
+        <div class="btns" data-group="imovel">
+          <button class="btn" data-value="Sim possuo imóvel" type="button">
+            Sim possuo imóvel
+          </button>
+          <button class="btn" data-value="Não possuo imóvel" type="button">
+            Não possuo imóvel
+          </button>
+        </div>
+        <input id="imovel" name="imovel" required type="hidden" />
+        <div class="error" data-error="imovel">Selecione uma opção.</div>
+        <div class="nav">
+          <button class="prev" type="button">Voltar</button>
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- 8. Veículo -->
+      <div class="step" data-step="9">
+        <label>8ª Você possuí veículo?</label>
+        <div class="btns" data-group="veiculo">
+          <button class="btn" data-value="Sim possuo veículo" type="button">
+            Sim possuo veículo
+          </button>
+          <button class="btn" data-value="Não possuo veículo" type="button">
+            Não possuo veículo
+          </button>
+        </div>
+        <input id="veiculo" name="veiculo" required type="hidden" />
+        <div class="error" data-error="veiculo">Selecione uma opção.</div>
+        <div class="nav">
+          <button class="prev" type="button">Voltar</button>
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- 9. Notas fiscais -->
+      <div class="step" data-step="10">
+        <label>8ª Você gera notas fiscais para receber?</label>
+        <div class="btns" data-group="nf">
+          <button class="btn" data-value="Sim gero notas fiscais" type="button">
+            Sim gero notas fiscais
+          </button>
+          <button class="btn" data-value="Não gero notas fiscais" type="button">
+            Não gero notas fiscais
+          </button>
+        </div>
+        <input id="nf" name="nf" required type="hidden" />
+        <div class="error" data-error="nf">Selecione uma opção.</div>
+        <div class="nav">
+          <button class="prev" type="button">Voltar</button>
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- 10. Negativado -->
+      <div class="step" data-step="11">
+        <label>9ª Você está negativado?</label>
+        <div class="btns" data-group="negativado">
+          <button class="btn" data-value="Não, não estou negativado" type="button">
+            Não, não estou negativado.
+          </button>
+          <button class="btn" data-value="Sim, estou negativado" type="button">
+            Sim, estou negativado.
+          </button>
+        </div>
+        <input id="negativado" name="negativado" required type="hidden" />
+        <div class="error" data-error="negativado">Selecione uma opção.</div>
+        <div class="nav">
+          <button class="prev" type="button">Voltar</button>
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- 11. Estado civil -->
+      <div class="step" data-step="12">
+        <label>10ª Qual é seu estado civil?</label>
+        <div class="btns" data-group="estadoCivil">
+          <button class="btn" data-value="Solteiro" type="button">Solteiro</button>
+          <button class="btn" data-value="Casado" type="button">Casado</button>
+          <button class="btn" data-value="Viúvo" type="button">Viúvo</button>
+          <button class="btn" data-value="Outro" type="button">Outro</button>
+        </div>
+        <input id="estadoCivil" name="estadoCivil" required type="hidden" />
+        <div class="error" data-error="estadoCivil">
+          Selecione uma opção.
+        </div>
+        <div class="nav">
+          <button class="prev" type="button">Voltar</button>
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- 12. Dados pessoais -->
+      <div class="step" data-step="13">
+        <label>11ª PENÚLTIMA ETAPA — Vamos preencher o restante dos seus dados</label>
+
+        <div class="grid cols-2">
+          <div>
+            <label for="nascimento">Data de nascimento</label>
+            <input id="nascimento" name="nascimento" required type="date" />
+            <div class="error" data-error="nascimento">
+              Informe sua data de nascimento.
+            </div>
+          </div>
+
+          <div>
+            <label for="rg">RG</label>
+            <input id="rg" name="rg" required type="text" />
+            <div class="error" data-error="rg">Informe seu RG.</div>
+          </div>
+
+          <div>
+            <label for="renda">Renda</label>
+            <input id="renda" name="renda" required type="text" />
+            <div class="error" data-error="renda">Informe sua renda.</div>
+          </div>
+
+          <div>
+            <label for="celular">Celular</label>
+            <input id="celular" name="celular" required type="tel" />
+            <div class="error" data-error="celular">Informe seu celular.</div>
+          </div>
+
+          <div>
+            <label for="instrucao">Grau de Instrução</label>
+            <select id="instrucao" name="instrucao" required>
+              <option value="">Selecione</option>
+              <option>Analfabeto</option>
+              <option>1º grau</option>
+              <option>Ensino médio</option>
+              <option>Superior incompleto</option>
+              <option>Superior completo</option>
+            </select>
+            <div class="error" data-error="instrucao">
+              Selecione o grau de instrução.
+            </div>
+          </div>
+        </div>
+
+        <div class="nav">
+          <button class="prev" type="button">Voltar</button>
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- 13. Upload -->
+      <div class="step" data-step="20">
+        <label>13ª Envie as fotos necessárias</label>
+
+        <div class="grid cols-2">
+          <div>
+            <label for="docFoto">📄 Enviar foto do documento</label>
+            <input id="docFoto" name="docFoto" type="file" accept="image/*" />
+            <div class="error" data-error="docFoto">
+              Envie uma foto do documento.
+            </div>
+          </div>
+
+          <div>
+            <label for="selfie">🤳 Enviar selfie</label>
+            <input id="selfie" name="selfie" type="file" accept="image/*" />
+            <div class="error" data-error="selfie">Envie uma selfie.</div>
+          </div>
+        </div>
+
+        <div class="nav">
+          <button class="prev" type="button">Voltar</button>
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- CONTABILIDADE -->
+      <div class="step" data-step="21">
+        <label>Quanto você paga de contabilidade?</label>
+        <input
+          id="Contabilidade"
+          name="Contabilidade"
+          placeholder="R$ 0,00"
+          required
+          type="text"
+        />
+        <div class="error" data-error="Contabilidade">
+          Informe o valor da contabilidade.
+        </div>
+        <div class="nav">
+          <button class="prev" type="button">Voltar</button>
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- FUNCIONÁRIOS -->
+      <div class="step" data-step="15">
+        <label>Quantos funcionários sua empresa possui?</label>
+        <div class="btns" data-group="qtdFuncionarios">
+          <button class="btn" data-value="1 a 5" type="button">1 a 5</button>
+          <button class="btn" data-value="5 a 10" type="button">5 a 10</button>
+          <button class="btn" data-value="10 a 20" type="button">10 a 20</button>
+          <button class="btn" data-value="mais de 20" type="button">
+            mais de 20
+          </button>
+        </div>
+        <input
+          id="qtdFuncionarios"
+          name="qtdFuncionarios"
+          required
+          type="hidden"
+        />
+        <div class="error" data-error="qtdFuncionarios">
+          Selecione uma opção.
+        </div>
+        <div class="nav">
+          <button class="prev" type="button">Voltar</button>
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- MAQUININHA -->
+      <div class="step" data-step="16">
+        <label>No seu negócio você trabalha com maquininha?</label>
+        <div class="btns" data-group="maquininha">
+          <button class="btn" data-value="Sim" type="button">Sim</button>
+          <button class="btn" data-value="Não" type="button">Não</button>
+        </div>
+        <input id="maquininha" name="maquininha" required type="hidden" />
+        <div class="error" data-error="maquininha">
+          Selecione uma opção.
+        </div>
+        <div class="nav">
+          <button class="prev" type="button">Voltar</button>
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- CONVÊNIO MÉDICO -->
+      <div class="step" data-step="17">
+        <label>Você possui convênio médico?</label>
+        <div class="btns" data-group="convenioMedico">
+          <button class="btn" data-value="Sim" type="button">Sim</button>
+          <button class="btn" data-value="Não" type="button">Não</button>
+        </div>
+        <input
+          id="convenioMedico"
+          name="convenioMedico"
+          required
+          type="hidden"
+        />
+        <div class="error" data-error="convenioMedico">
+          Selecione uma opção.
+        </div>
+        <div class="nav">
+          <button class="prev" type="button">Voltar</button>
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- CONVÊNIO ODONTO -->
+      <div class="step" data-step="18">
+        <label>Você possui convênio odontológico?</label>
+        <div class="btns" data-group="convenioOdonto">
+          <button class="btn" data-value="Sim" type="button">Sim</button>
+          <button class="btn" data-value="Não" type="button">Não</button>
+        </div>
+        <input
+          id="convenioOdonto"
+          name="convenioOdonto"
+          required
+          type="hidden"
+        />
+        <div class="error" data-error="convenioOdonto">
+          Selecione uma opção.
+        </div>
+        <div class="nav">
+          <button class="prev" type="button">Voltar</button>
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- TIPO EMPRESA -->
+      <div class="step" data-step="19">
+        <label>Sua empresa é de?</label>
+        <div class="btns" data-group="tipoEmpresa">
+          <button class="btn" data-value="Produtos" type="button">
+            Produtos
+          </button>
+          <button class="btn" data-value="Serviços" type="button">
+            Serviços
+          </button>
+        </div>
+        <input id="tipoEmpresa" name="tipoEmpresa" required type="hidden" />
+        <div class="error" data-error="tipoEmpresa">
+          Selecione uma opção.
+        </div>
+        <div class="nav">
+          <button class="prev" type="button">Voltar</button>
+          <button class="next" type="button">Continuar</button>
+        </div>
+      </div>
+
+      <!-- ENDEREÇO -->
+      <div class="step" data-step="14">
+        <label>12ª ÚLTIMA ETAPA — Endereço</label>
+
+        <div class="grid cols-2">
+          <div>
+            <label for="cep">CEP</label>
+            <input id="cep" name="cep" required type="text" />
+            <div class="error" data-error="cep">Informe um CEP válido.</div>
+          </div>
+
+          <div>
+            <label for="endereco">Endereço</label>
+            <input id="endereco" name="endereco" required type="text" />
+            <div class="error" data-error="endereco">
+              Informe o endereço.
+            </div>
+          </div>
+
+          <div>
+            <label for="numero">Número</label>
+            <input id="numero" name="numero" required type="text" />
+            <div class="error" data-error="numero">Informe o número.</div>
+          </div>
+
+          <div>
+            <label for="bairro">Bairro</label>
+            <input id="bairro" name="bairro" required type="text" />
+            <div class="error" data-error="bairro">Informe o bairro.</div>
+          </div>
+
+          <div>
+            <label for="estado">Estado</label>
+            <input id="estado" name="estado" required type="text" />
+            <div class="error" data-error="estado">Informe o estado.</div>
+          </div>
+
+          <div>
+            <label for="cidade">Cidade</label>
+            <input id="cidade" name="cidade" required type="text" />
+            <div class="error" data-error="cidade">Informe a cidade.</div>
+          </div>
+        </div>
+
+        <div style="margin-top:18px">
+          <button class="submit" type="submit">Concluir</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================== CONFIGURAÇÃO STEIN ================== */
+const STEIN_STORAGE_ID = '68936697c088333365c84f73';
+const SHEET_NAME = 'KGIRO';
+const STEIN_URL = `https://api.steinhq.com/v1/storages/${STEIN_STORAGE_ID}/${encodeURIComponent(SHEET_NAME)}`;
+
+/* ================== DOM READY ================== */
+document.addEventListener('DOMContentLoaded', () => {
+
+  /* ================== MULTISTEP ENGINE ================== */
+  const steps = Array.from(document.querySelectorAll('.step'));
+  const stepTotalEl = document.getElementById('stepTotal');
+  const stepNowEl   = document.getElementById('stepNow');
+  const bar         = document.getElementById('bar');
+
+  let idx = 0;
+  stepTotalEl.textContent = steps.length;
+
+  function updateProgress(){
+    const visualIdx = idx + 1;
+    stepNowEl.textContent = visualIdx;
+    const percent = ((visualIdx - 1) / (steps.length - 1)) * 100;
+    bar.style.inset = `0 ${100 - percent}% 0 0`;
+  }
+
+  function show(to){
+    steps.forEach((s,i)=>s.classList.toggle('active', i === to));
+    idx = to;
+    updateProgress();
+  }
+
+  function next(){
+    if(!validateCurrent()) return;
+    if(idx < steps.length - 1) show(idx + 1);
+  }
+
+  function prev(){
+    if(idx > 0) show(idx - 1);
+  }
+
+  steps.forEach(step=>{
+    const n = step.querySelector('.next');
+    const p = step.querySelector('.prev');
+    if(n) n.addEventListener('click', next);
+    if(p) p.addEventListener('click', prev);
+  });
+
+  updateProgress();
+
+  /* ================== BOTÕES SELECIONÁVEIS ================== */
+  function bindSelectable(groupName){
+    const group = document.querySelector(`[data-group="${groupName}"]`);
+    if(!group) return;
+    const hidden = document.getElementById(groupName);
+    group.addEventListener('click', e=>{
+      const btn = e.target.closest('.btn');
+      if(!btn) return;
+      group.querySelectorAll('.btn').forEach(b=>b.classList.remove('selected'));
+      btn.classList.add('selected');
+      hidden.value = btn.dataset.value;
+    });
+  }
+
+  [
+    'valorDesejado','parcelas','carencia','motivo','imovel','veiculo',
+    'nf','negativado','estadoCivil','qtdFuncionarios',
+    'maquininha','convenioMedico','convenioOdonto','tipoEmpresa'
+  ].forEach(bindSelectable);
+
+  /* ================== MÁSCARAS ================== */
+  const onlyDigits = v => (v||'').replace(/\D+/g,'');
+
+  const maskCPF = v =>
+    onlyDigits(v).slice(0,11)
+      .replace(/(\d{3})(\d)/,'$1.$2')
+      .replace(/(\d{3})(\d)/,'$1.$2')
+      .replace(/(\d{3})(\d{1,2})$/,'$1-$2');
+
+  const maskCNPJ = v =>
+    onlyDigits(v).slice(0,14)
+      .replace(/(\d{2})(\d)/,'$1.$2')
+      .replace(/(\d{3})(\d)/,'$1.$2')
+      .replace(/(\d{3})(\d)/,'$1/$2')
+      .replace(/(\d{4})(\d{1,2})$/,'$1-$2');
+
+  const maskCEP = v =>
+    onlyDigits(v).slice(0,8)
+      .replace(/(\d{5})(\d{1,3})/,'$1-$2');
+
+  ['cpf','cnpj','cep'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.addEventListener('input', e=>{
+      if(id==='cpf')  e.target.value = maskCPF(e.target.value);
+      if(id==='cnpj') e.target.value = maskCNPJ(e.target.value);
+      if(id==='cep')  e.target.value = maskCEP(e.target.value);
+    });
+  });
+
+  /* ================== VIA CEP ================== */
+  async function buscaCEP(cep){
+    const c = onlyDigits(cep);
+    if(c.length !== 8) return null;
+    try{
+      const r = await fetch(`https://viacep.com.br/ws/${c}/json/`);
+      const j = await r.json();
+      return j.erro ? null : j;
+    }catch{ return null; }
+  }
+
+  const cepEl = document.getElementById('cep');
+  if(cepEl){
+    cepEl.addEventListener('blur', async ()=>{
+      const j = await buscaCEP(cepEl.value);
+      if(!j) return;
+      endereco.value = j.logradouro || '';
+      bairro.value   = j.bairro || '';
+      cidade.value   = j.localidade || '';
+      estado.value   = j.uf || '';
+    });
+  }
+
+  /* ================== VALIDAÇÃO ================== */
+  function showError(name, show){
+    const el = document.querySelector(`[data-error="${name}"]`);
+    if(el) el.style.display = show ? 'block' : 'none';
+  }
+
+  function validateCurrent(){
+    const current = steps[idx];
+    let valid = true;
+
+    current.querySelectorAll('input[required], select[required]').forEach(inp=>{
+      const ok = inp.value && inp.value.trim();
+      showError(inp.name, !ok);
+      if(!ok) valid = false;
+    });
+
+    current.querySelectorAll('input[type="hidden"][required]').forEach(inp=>{
+      const ok = inp.value && inp.value.trim();
+      showError(inp.name, !ok);
+      if(!ok) valid = false;
+    });
+
+    return valid;
+  }
+
+  /* ================== CONTABILIDADE ================== */
+  const contEl = document.getElementById('Contabilidade');
+  if(contEl){
+    contEl.addEventListener('input', ()=>{
+      let v = contEl.value.replace(/\D+/g,'');
+      if(!v){ contEl.value='R$ 0,00'; return; }
+      v = (parseInt(v,10)/100).toFixed(2).replace('.',',');
+      contEl.value = 'R$ ' + v.replace(/\B(?=(\d{3})+(?!\d))/g,'.');
+    });
+  }
+
+  /* ================== UPLOAD FIREBASE ================== */
+  async function uploadFileFirebase(input){
+    const file = input.files[0];
+    if(!file) return '';
+    const ref = firebase.storage().ref().child('uploads/' + Date.now() + '_' + file.name);
+    await ref.put(file);
+    return await ref.getDownloadURL();
+  }
+
+  /* ================== SUBMISSÃO ================== */
+  const form = document.getElementById('formCredito');
+
+  form.addEventListener('submit', async e=>{
+    e.preventDefault();
+    if(!validateCurrent()) return;
+
+    const fd = new FormData(form);
+    const data = Object.fromEntries(fd.entries());
+
+    data.docFoto = await uploadFileFirebase(document.getElementById('docFoto'));
+    data.selfie  = await uploadFileFirebase(document.getElementById('selfie'));
+
+    try{
+      const res = await fetch(STEIN_URL,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify([data])
+      });
+      if(!res.ok) throw new Error(res.status);
+
+      alert('✅ Dados enviados com sucesso!');
+      form.reset();
+      document.querySelectorAll('.btn.selected').forEach(b=>b.classList.remove('selected'));
+      show(0);
+    }catch{
+      alert('❌ Erro ao enviar os dados.');
+    }
+  });
+
+});
+</script>
+
+</body>
+</html>
